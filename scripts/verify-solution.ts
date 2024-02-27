@@ -1,7 +1,9 @@
+import { ethers } from 'ethers'
 import { poseidon } from "circomlibjs" // v0.0.8
 import { normalize } from "../setup/utils"
 import { challenges } from '../challenges'
 import { ZqField } from 'ffjavascript'
+import { getRewardAddress } from './contract_addresses'
 const SNARK_FIELD_SIZE = BigInt('21888242871839275222246405745257275088548364400416034343698204186575808495617')
 
 // Creates the finite field
@@ -18,6 +20,18 @@ const logger = {
 
 const main = async (value1, value2, value3, value4) => {
   try {
+    // rewards contract
+    const address = await getRewardAddress()
+
+    // "signer" represents the current selected account and provider.
+    const signer = (new ethers.providers.Web3Provider(web3Provider)).getSigner()
+
+    const abi = await remix.call('fileManager', 'readFile', 'abi/contract-rewards.abi')
+    
+    // we finally use the address, the contract interfact and the current context (provider and account)
+    // to instantiate an ethers.Contract object.
+    let contract = new ethers.Contract(address, JSON.parse(abi), signer);
+
     // @ts-ignore
     const r1csBuffer = await remix.call('fileManager', 'readFile', 'circuits/.bin/calculate_hash.r1cs', true);
     // @ts-ignore
@@ -40,7 +54,7 @@ const main = async (value1, value2, value3, value4) => {
       value2,
       value3,
       value4,
-      hash: challenges[0].hash,
+      hash: await contract.zkChallengeHash(),
       externalNullifier: Date.now()
     }
     
