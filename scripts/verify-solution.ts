@@ -54,7 +54,7 @@ const main = async (value1, value2, value3, value4) => {
       value2,
       value3,
       value4,
-      hash: await contract.zkChallengeHash(),
+      hash: BigInt(await contract.zkChallenge(0)).toString(),
       externalNullifier: Date.now()
     }
     
